@@ -1,10 +1,18 @@
 from flask import Flask, request, jsonify, render_template
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+import os
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///pf_system.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Disable debugger pin for environments that do not support multiprocessing
+os.environ['WERKZEUG_DEBUG_PIN'] = 'off'
+
+# Avoid using multiprocessing-related features in debug mode
+app.debug = False
+
 db = SQLAlchemy(app)
 
 class User(db.Model):
@@ -23,7 +31,9 @@ class Loan(db.Model):
     repayment_years = db.Column(db.Integer, default=5)
     date_taken = db.Column(db.Date, default=datetime.utcnow)
 
-db.create_all()
+# Ensure DB is created in app context
+with app.app_context():
+    db.create_all()
 
 @app.route("/")
 def index():
@@ -81,4 +91,4 @@ def settlement(user_id):
     })
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()
